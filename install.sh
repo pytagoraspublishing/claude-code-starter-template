@@ -18,6 +18,13 @@ TEMPLATE_ITEMS=(
     "CLAUDE.md"
 )
 
+# Detect if running interactively
+if [ -t 0 ]; then
+    INTERACTIVE=true
+else
+    INTERACTIVE=false
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -54,14 +61,21 @@ check_git_repo() {
 check_remote_exists() {
     if git remote get-url "$TEMPLATE_REMOTE_NAME" > /dev/null 2>&1; then
         print_warning "Remote '$TEMPLATE_REMOTE_NAME' already exists"
-        read -p "Do you want to remove and re-add it? (y/N) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            git remote remove "$TEMPLATE_REMOTE_NAME"
-            print_success "Removed existing remote '$TEMPLATE_REMOTE_NAME'"
+        
+        if [ "$INTERACTIVE" = true ]; then
+            read -p "Do you want to remove and re-add it? (y/N) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                git remote remove "$TEMPLATE_REMOTE_NAME"
+                print_success "Removed existing remote '$TEMPLATE_REMOTE_NAME'"
+            else
+                print_info "Using existing remote"
+                return 0
+            fi
         else
-            print_info "Using existing remote"
-            return 0
+            # Non-interactive mode: always remove and re-add
+            git remote remove "$TEMPLATE_REMOTE_NAME"
+            print_success "Removed existing remote '$TEMPLATE_REMOTE_NAME' (non-interactive mode)"
         fi
     fi
     return 1
@@ -86,10 +100,17 @@ check_conflicts() {
     local item="$1"
     if [ -e "$item" ]; then
         print_warning "$item already exists in your project"
-        read -p "Do you want to overwrite it? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_info "Skipping $item"
+        
+        if [ "$INTERACTIVE" = true ]; then
+            read -p "Do you want to overwrite it? (y/N) " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Skipping $item"
+                return 1
+            fi
+        else
+            # Non-interactive mode: skip existing files for safety
+            print_info "Skipping $item (already exists, non-interactive mode)"
             return 1
         fi
     fi
@@ -155,13 +176,19 @@ import_template_items() {
 
 # Remove template remote
 cleanup_remote() {
-    read -p "Do you want to remove the template remote? (Y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        git remote remove "$TEMPLATE_REMOTE_NAME"
-        print_success "Removed template remote"
+    if [ "$INTERACTIVE" = true ]; then
+        read -p "Do you want to remove the template remote? (Y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            git remote remove "$TEMPLATE_REMOTE_NAME"
+            print_success "Removed template remote"
+        else
+            print_info "Template remote kept as '$TEMPLATE_REMOTE_NAME'"
+        fi
     else
-        print_info "Template remote kept as '$TEMPLATE_REMOTE_NAME'"
+        # Non-interactive mode: always remove template remote
+        git remote remove "$TEMPLATE_REMOTE_NAME"
+        print_success "Removed template remote (non-interactive mode)"
     fi
 }
 
@@ -170,6 +197,11 @@ main() {
     echo "Claude Code Starter Template Installer"
     echo "======================================"
     echo
+    
+    if [ "$INTERACTIVE" = false ]; then
+        print_info "Running in non-interactive mode"
+        echo
+    fi
     
     # Step 1: Check git repository
     check_git_repo
