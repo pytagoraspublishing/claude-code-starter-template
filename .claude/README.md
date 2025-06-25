@@ -1,0 +1,1 @@
+Each of the commands will be explained here in detail.
