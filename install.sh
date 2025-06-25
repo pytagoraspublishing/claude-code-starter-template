@@ -4,7 +4,7 @@
 # This script pulls specific files and folders from the template repository
 # into your current project.
 
-set -e  # Exit on error
+# set -e  # Exit on error - commented out to prevent early exit on user choices
 
 # Configuration
 TEMPLATE_REPO_URL="https://github.com/pytagoraspublishing/claude-code-starter-template.git"
@@ -103,11 +103,39 @@ import_template_items() {
     
     print_info "Importing template files and folders..."
     
+    # Create a single temporary directory for all operations
+    local temp_dir=$(mktemp -d)
+    print_info "Created temporary directory: $temp_dir"
+    
+    # Initialize temp git repo and fetch template
+    print_info "Fetching template repository into temporary directory..."
+    if ! (cd "$temp_dir" && \
+          git init --quiet && \
+          git remote add template "$TEMPLATE_REPO_URL" && \
+          git fetch template --depth=1 --quiet); then
+        print_error "Failed to fetch template repository"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    # Process each item
     for item in "${TEMPLATE_ITEMS[@]}"; do
         if check_conflicts "$item"; then
             print_info "Importing $item..."
-            if git checkout "${TEMPLATE_REMOTE_NAME}/${TEMPLATE_BRANCH}" -- "$item" 2>/dev/null; then
-                print_success "Imported $item"
+            
+            # Checkout the item in temp directory
+            if (cd "$temp_dir" && git checkout "template/${TEMPLATE_BRANCH}" -- "$item" 2>/dev/null); then
+                
+                # Copy from temp to current directory
+                if [ -d "$temp_dir/$item" ]; then
+                    cp -r "$temp_dir/$item" . && print_success "Imported $item (directory)"
+                elif [ -f "$temp_dir/$item" ]; then
+                    cp "$temp_dir/$item" . && print_success "Imported $item (file)"
+                else
+                    print_warning "$item exists in repository but could not be copied"
+                    continue
+                fi
+                
                 ((imported_count++))
             else
                 print_warning "Could not find $item in template repository"
@@ -116,6 +144,10 @@ import_template_items() {
             ((skipped_count++))
         fi
     done
+    
+    # Cleanup temp directory
+    rm -rf "$temp_dir"
+    print_info "Cleaned up temporary directory"
     
     echo
     print_info "Summary: $imported_count items imported, $skipped_count items skipped"
