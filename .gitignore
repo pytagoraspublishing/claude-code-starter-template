@@ -3,3 +3,5 @@ test-install/
 
 # Claude session files
 .claude/sessions/
+
+.env
