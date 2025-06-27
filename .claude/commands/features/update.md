@@ -1,9 +1,9 @@
-Update the current development session by:
+Update the current development feature by:
 
 1. Find the USERNAME of the currently logged in user in the terminal.
-2. Check if `.claude/sessions/USERNAME/.current-session` exists to find the active session
-2. If no active session, inform user to start one with `/project:session:start`
-3. If session exists, append to the session file with:
+2. Check if `.claude/features/USERNAME/.current-feature.md` exists to find the active feature
+2. If no active feature, inform user to start one with `/project:feature:start`
+3. If feature exists, append to the feature file with:
    - Current timestamp
    - The update: $ARGUMENTS (or if no arguments, summarize recent activities)
    - Git status summary:

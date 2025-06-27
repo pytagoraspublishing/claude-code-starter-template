@@ -1,10 +1,10 @@
-End the current development session by:
+End the current development feature by:
 
 1. Find the current terminal USERNAME.
-2. Check `.claude/sessions/USERNAME/.current-session` for the active session
-3. If no active session, inform user there's nothing to end
-4. If session exists, append a comprehensive summary including:
-   - Session duration
+2. Check `.claude/features/USERNAME/.current-feature` for the active feature
+3. If no active feature, inform user there's nothing to end
+4. If feature exists, append a comprehensive summary including:
+   - Feature duration
    - Git summary:
      * Total files changed (added/modified/deleted)
      * List all changed files with change type
@@ -25,7 +25,7 @@ End the current development session by:
    - What wasn't completed
    - Tips for future developers
 
-4. Empty the `.claude/sessions/USERNAME/.current-session` file (don't remove it, just clear its contents)
-5. Inform user the session has been documented
+5. Empty the `.claude/features/USERNAME/.current-feature.md` file (don't remove it, just clear its contents)
+6. Inform user the feature has been documented
 
-The summary should be thorough enough that another developer (or AI) can understand everything that happened without reading the entire session.
+The summary should be thorough enough that another developer (or AI) can understand everything that happened without reading the entire feature.
